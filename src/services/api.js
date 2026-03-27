@@ -3,8 +3,14 @@ import axios from 'axios';
 // API Configuration
 const DEFAULT_PROD_API_URL = 'https://server-one-psi-87.vercel.app/api';
 
+const normalizeApiBaseUrl = (url) => {
+  if (!url) return url;
+  const trimmed = String(url).trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
 const resolveApiBaseUrl = () => {
-  const envBaseUrl = process.env.REACT_APP_API_URL;
+  const envBaseUrl = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
   const isBrowser = typeof window !== 'undefined';
   const host = isBrowser ? window.location.hostname : '';
   const isLocalHost = host === 'localhost' || host === '127.0.0.1';
@@ -17,7 +23,7 @@ const resolveApiBaseUrl = () => {
   }
 
   if (isBrowser && !isLocalHost) {
-    return DEFAULT_PROD_API_URL;
+    return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
   }
 
   return 'http://localhost:5000/api';
