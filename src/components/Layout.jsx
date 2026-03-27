@@ -1,0 +1,115 @@
+import React from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { BarChart3, Users, Package, Calendar, Settings, Menu, X, ImageIcon, Palette } from 'lucide-react';
+
+const Layout = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  const menuItems = [
+    { path: '/', icon: BarChart3, label: 'Dashboard' },
+    { path: '/artists', icon: Palette, label: 'Artists' },
+    { path: '/users', icon: Users, label: 'Users' },
+    { path: '/products', icon: Package, label: 'Products' },
+    { path: '/events', icon: Calendar, label: 'Events' },
+    { path: '/gallery', icon: ImageIcon, label: 'Gallery' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between h-16 px-6 border-b flex-shrink-0">
+            <div className="flex items-center">
+              <div className="p-2 bg-primary-600 rounded-lg">
+                <BarChart3 size={24} className="text-white" />
+              </div>
+              <span className="ml-3 text-xl font-bold text-gray-900">ArtArtist Admin</span>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <nav className="mt-8 px-4 flex-1 overflow-y-auto">
+            <div className="space-y-2 pb-8">
+              {menuItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => {
+                      navigate(item.path);
+                      setSidebarOpen(false);
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors
+                      ${isActive 
+                        ? 'bg-primary-50 text-primary-600 border-r-2 border-primary-600' 
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <item.icon size={20} />
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Top header */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+              >
+                <Menu size={20} />
+              </button>
+              
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-gray-500">
+                  Admin Dashboard
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-sm text-gray-600">Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Layout;
