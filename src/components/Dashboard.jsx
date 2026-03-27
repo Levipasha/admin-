@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
-import { BarChart3, Users, Package, Calendar, TrendingUp, TrendingDown, Eye, Edit, Trash2 } from 'lucide-react';
+import { Users, Package, Calendar, TrendingUp, TrendingDown, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {

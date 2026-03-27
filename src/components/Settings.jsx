@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
-import { Save, Shield, Bell, Palette, Globe, Database } from 'lucide-react';
+import { Save, Shield, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const SystemSettings = () => {

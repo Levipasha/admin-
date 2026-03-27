@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
-import { Search, Filter, Plus, Edit, Trash2, User, Mail, Calendar } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, User, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const UserManagement = () => {
@@ -11,11 +11,7 @@ const UserManagement = () => {
   const [roleFilter, setRoleFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, searchTerm, roleFilter]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getUsers({
@@ -32,7 +28,11 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, roleFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {

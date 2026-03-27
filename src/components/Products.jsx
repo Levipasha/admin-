@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import { Search, Filter, Plus, Edit, Trash2, Package, Eye, DollarSign, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -27,23 +27,7 @@ const Products = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageChanged, setImageChanged] = useState(false);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [currentPage, searchTerm, statusFilter, categoryFilter]);
-
-  useEffect(() => {
-    const fetchArtists = async () => {
-      try {
-        const res = await adminAPI.getArtists({ isActive: true });
-        setArtists(res.artists || []);
-      } catch (error) {
-        console.error('Artists fetch error:', error);
-      }
-    };
-    fetchArtists();
-  }, []);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getProducts({
@@ -61,7 +45,25 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, statusFilter, categoryFilter]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    const fetchArtists = async () => {
+      try {
+        const res = await adminAPI.getArtists({ isActive: true });
+        setArtists(res.artists || []);
+      } catch (error) {
+        console.error('Artists fetch error:', error);
+      }
+    };
+    fetchArtists();
+  }, []);
+
+  // fetchProducts is memoized above for stable dependencies.
 
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import { Search, Filter, Plus, Edit, Trash2, Calendar, MapPin, Users, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -27,11 +27,7 @@ const Events = () => {
     country: ''
   });
 
-  useEffect(() => {
-    fetchEvents();
-  }, [currentPage, searchTerm, statusFilter, categoryFilter]);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminAPI.getEvents({
@@ -49,7 +45,11 @@ const Events = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, statusFilter, categoryFilter]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const handleDeleteEvent = async (eventId) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
