@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
-import { Search, Filter, Plus, Edit, Trash2, Package, Eye, DollarSign, Calendar } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, Package, Eye, IndianRupee, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Products = () => {
@@ -22,6 +22,7 @@ const Products = () => {
     artistProfile: '',
     imageUrl: '',
     imageAlt: '',
+    paymentLink: '',
   });
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -111,6 +112,24 @@ const Products = () => {
       artistProfile: product?.artistProfile?._id || '',
       imageUrl: firstUrl,
       imageAlt: firstAlt,
+      paymentLink: product?.paymentLink || '',
+    });
+    setImageChanged(false);
+    setUploadingImage(false);
+  };
+
+  const openAdd = () => {
+    setEditingProduct({ _isNew: true });
+    setEditForm({
+      name: '',
+      description: '',
+      category: 'painting',
+      price: '',
+      status: 'available',
+      artistProfile: '',
+      imageUrl: '',
+      imageAlt: '',
+      paymentLink: '',
     });
     setImageChanged(false);
     setUploadingImage(false);
@@ -124,7 +143,7 @@ const Products = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingProduct?._id) return;
+    if (!editingProduct) return;
     try {
       setSaving(true);
 
@@ -135,16 +154,25 @@ const Products = () => {
         status: editForm.status,
         price: Number(editForm.price),
         artistProfile: editForm.artistProfile || null,
+        paymentLink: editForm.paymentLink?.trim() || '',
       };
-      if (imageChanged) {
+      if (imageChanged || editingProduct?._isNew) {
         payload.images = editForm.imageUrl?.trim()
           ? [{ url: editForm.imageUrl.trim(), alt: editForm.imageAlt?.trim() || '' }]
           : [];
       }
 
-      const updated = await adminAPI.updateProduct(editingProduct._id, payload);
-      toast.success('Product updated');
-      setProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+      if (editingProduct._isNew) {
+        // Send inventory formatting expected by backend for new products
+        payload.inventory = { quantity: 1, trackQuantity: true };
+        const created = await adminAPI.createProduct(payload);
+        toast.success('Product created');
+        setProducts(prev => [created, ...prev]);
+      } else {
+        const updated = await adminAPI.updateProduct(editingProduct._id, payload);
+        toast.success('Product updated');
+        setProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+      }
       closeEdit();
     } catch (error) {
       console.error('Update product error:', error);
@@ -170,7 +198,7 @@ const Products = () => {
           <h1 className="text-2xl font-bold text-gray-900">Product Management</h1>
           <p className="text-gray-600 mt-1">Manage artwork, pricing, and inventory</p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={openAdd}>
           <Plus size={20} className="mr-2" />
           Add Product
         </button>
@@ -252,8 +280,8 @@ const Products = () => {
               
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1">
-                  <DollarSign size={16} className="text-green-600" />
-                  <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                  <IndianRupee size={16} className="text-green-600" />
+                  <span className="text-lg font-bold text-gray-900">₹{product.price}</span>
                 </div>
                 <div className="text-sm text-gray-500">
                   {product.category}
@@ -337,7 +365,9 @@ const Products = () => {
           />
           <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[calc(100vh-2rem)] flex flex-col">
             <div className="p-6 border-b flex items-center justify-between">
-              <div className="text-lg font-semibold text-gray-900">Edit product</div>
+              <div className="text-lg font-semibold text-gray-900">
+                {editingProduct?._isNew ? 'Add Product' : 'Edit Product'}
+              </div>
               <button className="btn-secondary px-3 py-1" onClick={closeEdit} disabled={saving}>
                 Close
               </button>
@@ -417,6 +447,17 @@ const Products = () => {
                   min="0"
                   value={editForm.price}
                   onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Link</label>
+                <input
+                  className="input"
+                  type="url"
+                  placeholder="https://rzp.io/..."
+                  value={editForm.paymentLink || ''}
+                  onChange={(e) => setEditForm((f) => ({ ...f, paymentLink: e.target.value }))}
                 />
               </div>
 

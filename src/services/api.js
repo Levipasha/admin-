@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API Configuration
-const DEFAULT_PROD_API_URL = 'https://server-one-psi-87.vercel.app/api';
+const DEFAULT_PROD_API_URL = 'http://127.0.0.1:5000/api';
 
 const normalizeApiBaseUrl = (url) => {
   if (!url) return url;
@@ -26,7 +26,7 @@ const resolveApiBaseUrl = () => {
     return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
   }
 
-  return 'http://localhost:5000/api';
+  return 'http://127.0.0.1:5000/api';
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -34,14 +34,20 @@ const API_BASE_URL = resolveApiBaseUrl();
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Auth is intentionally disabled for now (no token handling / redirects).
-
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('adminToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 // Auth API
 export const authAPI = {
   login: async (firebaseToken) => {
@@ -165,11 +171,19 @@ export const adminAPI = {
     });
     return response.data;
   },
-
   uploadProductImage: async (file) => {
     const formData = new FormData();
     formData.append('image', file);
     const response = await api.post('/admin/products/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  uploadEventImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post('/admin/events/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;

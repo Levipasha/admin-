@@ -91,7 +91,7 @@ const Dashboard = () => {
                     </p>
                     <p className="text-sm text-gray-500">
                       {type === 'user' ? item.email :
-                       type === 'product' ? `$${item.price}` :
+                       type === 'product' ? `₹${item.price}` :
                        new Date(item.date?.start || item.createdAt).toLocaleDateString()}
                     </p>
                   </div>

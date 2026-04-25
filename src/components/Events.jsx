@@ -13,18 +13,22 @@ const Events = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingEvent, setEditingEvent] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageChanged, setImageChanged] = useState(false);
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
     category: 'meetup',
-    status: 'draft',
+    status: 'published',
     startDate: '',
     locationType: 'physical',
     eventLink: '',
     platform: '',
     venue: '',
     city: '',
-    country: ''
+    country: '',
+    imageUrl: '',
+    imageAlt: '',
   });
 
   const fetchEvents = useCallback(async () => {
@@ -70,15 +74,38 @@ const Events = () => {
       title: event?.title || '',
       description: event?.description || '',
       category: event?.category || 'meetup',
-      status: event?.status || 'draft',
+      status: event?.status || 'published',
       startDate: event?.date?.start ? new Date(event.date.start).toISOString().slice(0, 16) : '',
       locationType: event?.location?.type || 'physical',
       eventLink: event?.location?.virtualLink || '',
       platform: event?.location?.platform || '',
       venue: event?.location?.venue || event?.location?.address || '',
       city: event?.location?.city || '',
-      country: event?.location?.country || ''
+      country: event?.location?.country || '',
+      imageUrl: event?.images?.[0]?.url || '',
+      imageAlt: event?.images?.[0]?.alt || '',
     });
+    setImageChanged(false);
+  };
+
+  const openAdd = () => {
+    setEditingEvent({ _isNew: true });
+    setEditForm({
+      title: '',
+      description: '',
+      category: 'meetup',
+      status: 'published',
+      startDate: new Date().toISOString().slice(0, 16),
+      locationType: 'physical',
+      eventLink: '',
+      platform: '',
+      venue: '',
+      city: '',
+      country: '',
+      imageUrl: '',
+      imageAlt: '',
+    });
+    setImageChanged(false);
   };
 
   const closeEdit = () => {
@@ -87,7 +114,7 @@ const Events = () => {
   };
 
   const saveEdit = async () => {
-    if (!editingEvent?._id) return;
+    if (!editingEvent) return;
     try {
       setSaving(true);
       const payload = {
@@ -97,7 +124,7 @@ const Events = () => {
         status: editForm.status,
         date: {
           start: editForm.startDate ? new Date(editForm.startDate).toISOString() : editingEvent?.date?.start,
-          end: editingEvent?.date?.end || (editForm.startDate ? new Date(editForm.startDate).toISOString() : undefined)
+          end: editingEvent?.date?.end || (editForm.startDate ? new Date(editForm.startDate).toISOString() : editingEvent?.date?.start)
         },
         location: {
           ...(editingEvent?.location || {}),
@@ -111,9 +138,30 @@ const Events = () => {
         }
       };
 
-      const updated = await adminAPI.updateEvent(editingEvent._id, payload);
-      setEvents((prev) => prev.map((ev) => (ev._id === updated._id ? updated : ev)));
-      toast.success('Event updated successfully');
+      if (imageChanged || editingEvent?._isNew) {
+        payload.images = editForm.imageUrl?.trim()
+          ? [{ url: editForm.imageUrl.trim(), alt: editForm.imageAlt?.trim() || '' }]
+          : [];
+      }
+
+      if (!payload.date.start) {
+        toast.error('Start date is required');
+        setSaving(false);
+        return;
+      }
+      if (editingEvent._isNew) {
+        // Required payload fields for new event
+        payload.pricing = { type: 'paid', amount: 0, currency: 'INR' };
+        payload.capacity = { max: 100, current: 0 };
+        
+        const created = await adminAPI.createEvent(payload);
+        setEvents((prev) => [created, ...prev]);
+        toast.success('Event created successfully');
+      } else {
+        const updated = await adminAPI.updateEvent(editingEvent._id, payload);
+        setEvents((prev) => prev.map((ev) => (ev._id === updated._id ? updated : ev)));
+        toast.success('Event updated successfully');
+      }
       closeEdit();
     } catch (error) {
       console.error('Update event error:', error);
@@ -177,7 +225,7 @@ const Events = () => {
           <h1 className="text-2xl font-bold text-gray-900">Event Management</h1>
           <p className="text-gray-600 mt-1">Organize exhibitions, workshops, and meetups</p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={openAdd}>
           <Plus size={20} className="mr-2" />
           Create Event
         </button>
@@ -390,7 +438,9 @@ const Events = () => {
             <div className="absolute inset-0 bg-black/40" onClick={closeEdit} />
             <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[calc(100vh-2rem)] flex flex-col">
               <div className="p-6 border-b flex items-center justify-between">
-                <div className="text-lg font-semibold text-gray-900">Edit event</div>
+                <div className="text-lg font-semibold text-gray-900">
+                  {editingEvent?._isNew ? 'Create event' : 'Edit event'}
+                </div>
                 <button className="btn-secondary px-3 py-1" onClick={closeEdit} disabled={saving}>Close</button>
               </div>
 
@@ -468,6 +518,52 @@ const Events = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                   <input className="input" value={editForm.country} onChange={(e) => setEditForm((f) => ({ ...f, country: e.target.value }))} />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="block w-full text-sm text-gray-700"
+                    disabled={saving || uploadingImage}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setUploadingImage(true);
+                        const res = await adminAPI.uploadEventImage(file);
+                        setEditForm((f) => ({ ...f, imageUrl: res.url || '' }));
+                        setImageChanged(true);
+                        toast.success('Image uploaded');
+                      } catch (err) {
+                        console.error('Event image upload error:', err);
+                        toast.error(err?.response?.data?.error || 'Upload failed');
+                      } finally {
+                        setUploadingImage(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  {editForm.imageUrl ? (
+                    <div className="mt-3 rounded-lg border overflow-hidden bg-gray-50">
+                      <img
+                        src={editForm.imageUrl}
+                        alt={editForm.imageAlt || editForm.title}
+                        className="w-full h-48 object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-3 text-sm text-gray-500">No image selected.</div>
+                  )}
+                  <div className="mt-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image alt text</label>
+                    <input
+                      className="input"
+                      value={editForm.imageAlt}
+                      onChange={(e) => setEditForm((f) => ({ ...f, imageAlt: e.target.value }))}
+                    />
+                  </div>
                 </div>
               </div>
 
