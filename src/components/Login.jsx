@@ -66,10 +66,10 @@ const Login = () => {
 
   const handleResendOTP = async () => {
     if (resendTimer > 0) return;
-    
+
     try {
       setLoading(true);
-      const response = await authAPI.requestAdminOTP(username.trim());
+      await authAPI.requestAdminOTP(username.trim());
       setResendTimer(60);
       toast.success('New OTP sent!');
     } catch (error) {
