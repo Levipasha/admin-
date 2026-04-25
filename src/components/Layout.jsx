@@ -1,11 +1,20 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Package, Calendar, Settings, Menu, X, ImageIcon, Palette } from 'lucide-react';
+import { BarChart3, Users, Package, Calendar, Settings, Menu, X, ImageIcon, Palette, LogOut, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
 
   const menuItems = [
     { path: '/', icon: BarChart3, label: 'Dashboard' },
@@ -91,13 +100,25 @@ const Layout = () => {
               </button>
               
               <div className="flex items-center gap-4">
-                <div className="text-sm text-gray-500">
-                  Admin Dashboard
+                {/* User Info */}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <User size={16} className="text-red-600" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <p className="text-sm font-medium text-gray-900">{user?.displayName || 'Admin'}</p>
+                    <p className="text-xs text-gray-500">{user?.email || 'admin@artlove.com'}</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Online</span>
-                </div>
+
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
               </div>
             </div>
           </div>

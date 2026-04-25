@@ -68,6 +68,17 @@ export const authAPI = {
     });
     return response.data;
   },
+
+  // Admin OTP Authentication
+  requestAdminOTP: async (username) => {
+    const response = await api.post('/auth/admin/request-otp', { username });
+    return response.data;
+  },
+
+  verifyAdminOTP: async (username, otp) => {
+    const response = await api.post('/auth/admin/verify-otp', { username, otp });
+    return response.data;
+  },
 };
 
 // Admin API

@@ -101,12 +101,19 @@ const AuthProvider = ({ children }) => {
     dispatch({ type: 'SET_LOADING', payload: false });
   }, []);
 
-  // Login with Firebase token
-  const login = async (firebaseToken) => {
+  // Login with Firebase token (legacy)
+  const login = async (firebaseToken, userData = null) => {
     try {
       dispatch({ type: 'LOGIN_START' });
 
-      const response = await authAPI.login(firebaseToken);
+      let response;
+      if (userData) {
+        // OTP login - data already provided
+        response = { token: firebaseToken, user: userData };
+      } else {
+        // Firebase login
+        response = await authAPI.login(firebaseToken);
+      }
       
       // Check if user is admin
       if (response.user.role !== 'admin') {
