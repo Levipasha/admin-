@@ -9,6 +9,7 @@ import Products from './components/Products';
 import Events from './components/Events';
 import SystemSettings from './components/Settings';
 import Gallery from './components/Gallery';
+import Announcements from './components/Announcements';
 import Layout from './components/Layout';
 import Login from './components/Login';
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="events" element={<Events />} />
           <Route path="gallery" element={<Gallery />} />
+          <Route path="announcements" element={<Announcements />} />
           <Route path="settings" element={<SystemSettings />} />
         </Route>
       </Routes>

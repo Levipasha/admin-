@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API Configuration
-const DEFAULT_PROD_API_URL = 'http://127.0.0.1:5000/api';
+const DEFAULT_PROD_API_URL = 'http://localhost:5000/api';
 
 const normalizeApiBaseUrl = (url) => {
   if (!url) return url;
@@ -26,7 +26,7 @@ const resolveApiBaseUrl = () => {
     return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
   }
 
-  return 'http://127.0.0.1:5000/api';
+  return 'http://localhost:5000/api';
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -34,7 +34,7 @@ const API_BASE_URL = resolveApiBaseUrl();
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 300000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -221,6 +221,22 @@ export const adminAPI = {
     const formData = new FormData();
     formData.append('image', file);
     const response = await api.post('/admin/artists/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+  uploadHeroImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post('/admin/announcements/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+  uploadHeroLogo: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post('/admin/announcements/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;

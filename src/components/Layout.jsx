@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Package, Calendar, Settings, Menu, X, ImageIcon, Palette, LogOut, User } from 'lucide-react';
+import { BarChart3, Users, Package, Calendar, Settings, Menu, X, ImageIcon, Palette, LogOut, User, Megaphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -23,6 +23,7 @@ const Layout = () => {
     { path: '/products', icon: Package, label: 'Products' },
     { path: '/events', icon: Calendar, label: 'Events' },
     { path: '/gallery', icon: ImageIcon, label: 'Gallery' },
+    { path: '/announcements', icon: Megaphone, label: 'Announcements' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
