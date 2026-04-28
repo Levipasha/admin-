@@ -32,6 +32,7 @@ const Announcements = () => {
   useEffect(() => {
     fetchAnnouncements();
     fetchActiveAnnouncement();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchAnnouncements = async () => {
@@ -337,7 +338,7 @@ const Announcements = () => {
                 <p className="text-xs text-gray-500 mb-2">Hero Image Preview</p>
                 <img
                   src={heroSettings.heroImage}
-                  alt="Hero image preview"
+                  alt="Hero preview"
                   className="max-h-32 w-full object-cover rounded"
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
