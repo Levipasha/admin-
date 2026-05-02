@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, Users, Package, Calendar, Settings, Menu, X, ImageIcon, Palette, LogOut, User, Megaphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+const logo = '/logo.png';
 
 const Layout = () => {
   const navigate = useNavigate();
@@ -45,9 +46,11 @@ const Layout = () => {
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between h-16 px-6 border-b flex-shrink-0">
             <div className="flex items-center">
-              <div className="p-2 bg-primary-600 rounded-lg">
-                <BarChart3 size={24} className="text-white" />
-              </div>
+              <img
+                src={logo}
+                alt="ArtArtist"
+                className="w-10 h-10 object-cover"
+              />
               <span className="ml-3 text-xl font-bold text-gray-900">ArtArtist Admin</span>
             </div>
             <button

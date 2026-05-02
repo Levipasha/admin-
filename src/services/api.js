@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // API Configuration
-const DEFAULT_PROD_API_URL = 'http://localhost:5000/api';
+const DEFAULT_PROD_API_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_DEFAULT_PROD_API_URL || '';
 
 const normalizeApiBaseUrl = (url) => {
   if (!url) return url;
@@ -26,7 +26,7 @@ const resolveApiBaseUrl = () => {
     return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
   }
 
-  return 'http://localhost:5000/api';
+  return `${process.env.REACT_APP_DEV_API_URL || 'http://localhost:5000'}/api`;
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
