@@ -4,6 +4,14 @@ import toast from 'react-hot-toast';
 import { API_URL } from '../config';
 import { adminAPI } from '../services/api';
 
+// Normalize API base URL to prevent duplicate /api paths
+const getApiBaseUrl = () => {
+  const base = API_URL || '';
+  // Remove trailing /api if present to avoid /api/api duplication
+  return base.replace(/\/api$/, '');
+};
+const BASE_API_URL = getApiBaseUrl();
+
 const Announcements = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +45,7 @@ const Announcements = () => {
 
   const fetchAnnouncements = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/announcements`, {
+      const response = await fetch(`${BASE_API_URL}/api/announcements`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -56,7 +64,7 @@ const Announcements = () => {
 
   const fetchActiveAnnouncement = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/announcements/active`);
+      const response = await fetch(`${BASE_API_URL}/api/announcements/active`);
       const data = await response.json();
       if (data.success && data.data) {
         setHeroSettings({
@@ -75,7 +83,7 @@ const Announcements = () => {
       const activeAnnouncement = announcements.find(a => a.isActive);
       
       if (activeAnnouncement) {
-        const response = await fetch(`${API_URL}/api/announcements/${activeAnnouncement._id}`, {
+        const response = await fetch(`${BASE_API_URL}/api/announcements/${activeAnnouncement._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -154,8 +162,8 @@ const Announcements = () => {
     
     try {
       const url = editingId 
-        ? `${API_URL}/api/announcements/${editingId}`
-        : `${API_URL}/api/announcements`;
+        ? `${BASE_API_URL}/api/announcements/${editingId}`
+        : `${BASE_API_URL}/api/announcements`;
       
       const method = editingId ? 'PUT' : 'POST';
       
@@ -187,7 +195,7 @@ const Announcements = () => {
     if (!window.confirm('Are you sure you want to delete this announcement?')) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/announcements/${id}`, {
+      const response = await fetch(`${BASE_API_URL}/api/announcements/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -210,7 +218,7 @@ const Announcements = () => {
 
   const handleToggleActive = async (id, currentStatus) => {
     try {
-      const response = await fetch(`${API_URL}/api/announcements/${id}`, {
+      const response = await fetch(`${BASE_API_URL}/api/announcements/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
