@@ -11,10 +11,6 @@ const EventSubscribers = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // all, active, inactive
 
-  useEffect(() => {
-    loadSubscribers();
-  }, [pagination.page, search, filter, loadSubscribers]);
-
   const loadSubscribers = useCallback(async () => {
     try {
       setLoading(true);
@@ -39,6 +35,10 @@ const EventSubscribers = () => {
       setLoading(false);
     }
   }, [pagination.page, search, filter]);
+
+  useEffect(() => {
+    loadSubscribers();
+  }, [loadSubscribers]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this subscriber?')) return;
