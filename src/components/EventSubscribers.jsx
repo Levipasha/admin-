@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import { Users, Trash2, Search, Mail, CheckCircle, XCircle, Download, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -13,9 +13,9 @@ const EventSubscribers = () => {
 
   useEffect(() => {
     loadSubscribers();
-  }, [pagination.page, search, filter]);
+  }, [pagination.page, search, filter, loadSubscribers]);
 
-  const loadSubscribers = async () => {
+  const loadSubscribers = useCallback(async () => {
     try {
       setLoading(true);
       const params = { 
@@ -38,7 +38,7 @@ const EventSubscribers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, search, filter]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this subscriber?')) return;

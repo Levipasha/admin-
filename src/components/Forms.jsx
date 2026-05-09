@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../services/api';
-import { Plus, Trash2, Edit, FileText, Users, ChevronDown, ChevronUp, GripVertical, X, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, Trash2, Edit, FileText, Users, ChevronUp, X, Eye, CheckCircle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FIELD_TYPES = [
