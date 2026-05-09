@@ -14,22 +14,22 @@ const resolveApiBaseUrl = () => {
   const isBrowser = typeof window !== 'undefined';
   const host = isBrowser ? window.location.hostname : '';
   const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-  const envPointsToLocal =
-    typeof envBaseUrl === 'string' &&
-    (envBaseUrl.includes('localhost') || envBaseUrl.includes('127.0.0.1'));
 
-  if (envBaseUrl && !(envPointsToLocal && !isLocalHost)) {
+  // When running locally, always use local dev API
+  if (isBrowser && isLocalHost) {
+    return `${process.env.REACT_APP_DEV_API_URL || 'http://localhost:5000'}/api`;
+  }
+
+  // Production: use env URL or default prod URL
+  if (envBaseUrl) {
     return envBaseUrl;
   }
 
-  if (isBrowser && !isLocalHost) {
-    return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
-  }
-
-  return `${process.env.REACT_APP_DEV_API_URL || 'http://localhost:5000'}/api`;
+  return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
+console.log('[Admin API] Base URL:', API_BASE_URL);
 
 // Create axios instance
 const api = axios.create({
@@ -225,6 +225,10 @@ export const adminAPI = {
     });
     return response.data;
   },
+  bulkUploadArtists: async (csvText, sendEmails = true) => {
+    const response = await api.post('/admin/artists/bulk-upload', { csvText, sendEmails });
+    return response.data;
+  },
   uploadHeroImage: async (file) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -233,12 +237,64 @@ export const adminAPI = {
     });
     return response.data;
   },
+  sendBulkAnnouncementEmail: async (payload) => {
+    const response = await api.post('/admin/announcements/bulk-email', payload);
+    return response.data;
+  },
   uploadHeroLogo: async (file) => {
     const formData = new FormData();
     formData.append('image', file);
     const response = await api.post('/admin/announcements/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
+    return response.data;
+  },
+
+  // Forms
+  getForms: async (params = {}) => {
+    const response = await api.get('/forms/admin/forms', { params });
+    return response.data;
+  },
+  getForm: async (id) => {
+    const response = await api.get(`/forms/admin/forms/${id}`);
+    return response.data;
+  },
+  createForm: async (payload) => {
+    const response = await api.post('/forms/admin/forms', payload);
+    return response.data;
+  },
+  updateForm: async (id, payload) => {
+    const response = await api.put(`/forms/admin/forms/${id}`, payload);
+    return response.data;
+  },
+  deleteForm: async (id) => {
+    const response = await api.delete(`/forms/admin/forms/${id}`);
+    return response.data;
+  },
+  getFormSubmissions: async (formId, params = {}) => {
+    const response = await api.get(`/forms/admin/forms/${formId}/submissions`, { params });
+    return response.data;
+  },
+  updateSubmissionStatus: async (submissionId, status) => {
+    const response = await api.put(`/forms/admin/submissions/${submissionId}/status`, { status });
+    return response.data;
+  },
+  getSubmissionsOverview: async () => {
+    const response = await api.get('/forms/admin/submissions');
+    return response.data;
+  },
+
+  // Event Subscribers
+  getSubscribers: async (params = {}) => {
+    const response = await api.get('/forms/admin/subscribers', { params });
+    return response.data;
+  },
+  updateSubscriber: async (id, data) => {
+    const response = await api.put(`/forms/admin/subscribers/${id}`, data);
+    return response.data;
+  },
+  deleteSubscriber: async (id) => {
+    const response = await api.delete(`/forms/admin/subscribers/${id}`);
     return response.data;
   },
 };

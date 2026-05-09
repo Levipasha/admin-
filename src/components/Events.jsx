@@ -84,6 +84,9 @@ const Events = () => {
       country: event?.location?.country || '',
       imageUrl: event?.images?.[0]?.url || '',
       imageAlt: event?.images?.[0]?.alt || '',
+      pricingType: event?.pricing?.type || 'free',
+      pricingAmount: event?.pricing?.amount || 0,
+      pricingCurrency: event?.pricing?.currency || 'INR',
     });
     setImageChanged(false);
   };
@@ -104,6 +107,9 @@ const Events = () => {
       country: '',
       imageUrl: '',
       imageAlt: '',
+      pricingType: 'free',
+      pricingAmount: 0,
+      pricingCurrency: 'INR',
     });
     setImageChanged(false);
   };
@@ -149,11 +155,17 @@ const Events = () => {
         setSaving(false);
         return;
       }
+
+      // Add pricing from form
+      payload.pricing = {
+        type: editForm.pricingType,
+        amount: editForm.pricingType === 'free' ? 0 : Number(editForm.pricingAmount || 0),
+        currency: editForm.pricingCurrency || 'INR'
+      };
+
       if (editingEvent._isNew) {
-        // Required payload fields for new event
-        payload.pricing = { type: 'paid', amount: 0, currency: 'INR' };
         payload.capacity = { max: 100, current: 0 };
-        
+
         const created = await adminAPI.createEvent(payload);
         setEvents((prev) => [created, ...prev]);
         toast.success('Event created successfully');
@@ -489,6 +501,48 @@ const Events = () => {
                     <option value="virtual">Virtual</option>
                   </select>
                 </div>
+
+                {/* Pricing Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pricing Type</label>
+                  <select
+                    className="input"
+                    value={editForm.pricingType}
+                    onChange={(e) => setEditForm((f) => ({ ...f, pricingType: e.target.value }))}
+                  >
+                    <option value="free">Free</option>
+                    <option value="paid">Paid</option>
+                    <option value="donation">Donation</option>
+                  </select>
+                </div>
+                {editForm.pricingType !== 'free' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+                      <input
+                        type="number"
+                        className="input"
+                        min="0"
+                        value={editForm.pricingAmount}
+                        onChange={(e) => setEditForm((f) => ({ ...f, pricingAmount: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                      <select
+                        className="input"
+                        value={editForm.pricingCurrency}
+                        onChange={(e) => setEditForm((f) => ({ ...f, pricingCurrency: e.target.value }))}
+                      >
+                        <option value="INR">INR (₹)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Event link (editable)</label>
                   <input

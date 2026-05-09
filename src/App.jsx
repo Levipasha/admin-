@@ -10,6 +10,8 @@ import Events from './components/Events';
 import SystemSettings from './components/Settings';
 import Gallery from './components/Gallery';
 import Announcements from './components/Announcements';
+import Forms from './components/Forms';
+import EventSubscribers from './components/EventSubscribers';
 import Layout from './components/Layout';
 import Login from './components/Login';
 
@@ -60,6 +62,8 @@ function App() {
           <Route path="events" element={<Events />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="announcements" element={<Announcements />} />
+          <Route path="forms" element={<Forms />} />
+          <Route path="subscribers" element={<EventSubscribers />} />
           <Route path="settings" element={<SystemSettings />} />
         </Route>
       </Routes>

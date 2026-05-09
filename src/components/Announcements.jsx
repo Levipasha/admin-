@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Megaphone, Eye, EyeOff, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Megaphone, Eye, EyeOff, Save, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_URL } from '../config';
 import { adminAPI } from '../services/api';
@@ -34,6 +34,15 @@ const Announcements = () => {
   const [savingHero, setSavingHero] = useState(false);
   const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
   const [uploadingHeroLogo, setUploadingHeroLogo] = useState(false);
+
+  // Bulk email state
+  const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
+  const [bulkSubject, setBulkSubject] = useState('');
+  const [bulkMessage, setBulkMessage] = useState('');
+  const [bulkIncludeEvents, setBulkIncludeEvents] = useState(false);
+  const [bulkTargetAudience, setBulkTargetAudience] = useState('all');
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
 
   const token = localStorage.getItem('adminToken');
 
@@ -256,6 +265,41 @@ const Announcements = () => {
     setShowForm(true);
   };
 
+  const handleSendBulkEmail = async (e) => {
+    e.preventDefault();
+    if (!bulkSubject.trim() || !bulkMessage.trim()) {
+      toast.error('Subject and message are required');
+      return;
+    }
+    if (!window.confirm(`Send this announcement to all ${bulkTargetAudience === 'all' ? 'users and artists' : bulkTargetAudience}?`)) {
+      return;
+    }
+    setBulkSending(true);
+    setBulkResult(null);
+    try {
+      const data = await adminAPI.sendBulkAnnouncementEmail({
+        subject: bulkSubject.trim(),
+        message: bulkMessage.trim(),
+        includeEvents: bulkIncludeEvents,
+        targetAudience: bulkTargetAudience
+      });
+      if (data.success) {
+        toast.success(`Announcement sent! ${data.summary.sent} sent, ${data.summary.failed} failed.`);
+        setBulkResult(data.summary);
+        setBulkSubject('');
+        setBulkMessage('');
+        setBulkIncludeEvents(false);
+      } else {
+        toast.error(data.error || 'Failed to send announcement');
+      }
+    } catch (error) {
+      console.error('Bulk email error:', error);
+      toast.error(error.response?.data?.error || 'Failed to send bulk announcement');
+    } finally {
+      setBulkSending(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       badge: 'Version 7.8',
@@ -420,6 +464,113 @@ const Announcements = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Bulk Email Section */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold">Bulk Announcement Email</h2>
+            <p className="text-sm text-gray-500">Send announcement emails to all users and artists</p>
+          </div>
+          <button
+            onClick={() => setBulkEmailOpen(!bulkEmailOpen)}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Mail size={20} />
+            {bulkEmailOpen ? 'Close' : 'Send Bulk Email'}
+          </button>
+        </div>
+
+        {bulkEmailOpen && (
+          <form onSubmit={handleSendBulkEmail} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <input
+                type="text"
+                value={bulkSubject}
+                onChange={(e) => setBulkSubject(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                placeholder="e.g., New Exhibition Opening Soon!"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+              <textarea
+                value={bulkMessage}
+                onChange={(e) => setBulkMessage(e.target.value)}
+                rows={5}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter your announcement message..."
+                required
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
+                <select
+                  value={bulkTargetAudience}
+                  onChange={(e) => setBulkTargetAudience(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="all">All Users & Artists</option>
+                  <option value="artists">Artists Only</option>
+                  <option value="users">Regular Users Only</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bulkIncludeEvents}
+                    onChange={(e) => setBulkIncludeEvents(e.target.checked)}
+                    className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Include upcoming events</span>
+                </label>
+              </div>
+            </div>
+
+            {bulkResult && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-sm text-green-800 font-medium">Last Send Results:</p>
+                <p className="text-sm text-green-700">
+                  {bulkResult.sent} sent successfully &middot; {bulkResult.failed} failed &middot; {bulkResult.total} total recipients
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={bulkSending}
+                className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bulkSending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail size={18} />
+                    Send Announcement
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setBulkEmailOpen(false); setBulkResult(null); }}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Form */}

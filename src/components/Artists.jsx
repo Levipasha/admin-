@@ -1,10 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { adminAPI } from '../services/api';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import {
+  Plus, Search, Edit, Trash2, UploadCloud, FileSpreadsheet,
+  CheckCircle2, XCircle, AlertCircle, Loader2, ChevronDown, ChevronUp
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const initialForm = {
   name: '',
+  email: '',
+  phone: '',
   artForm: 'Team',
   teamRole: '',
   isTeamMember: true,
@@ -33,6 +38,15 @@ const Artists = () => {
   const [artists, setArtists] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(initialForm);
+
+  // Bulk upload state
+  const [bulkFile, setBulkFile] = useState(null);
+  const [bulkPreview, setBulkPreview] = useState([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [bulkResults, setBulkResults] = useState(null);
+  const [bulkShowPreview, setBulkShowPreview] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchArtists = async () => {
     try {
@@ -70,6 +84,8 @@ const Artists = () => {
     setEditing(a);
     setForm({
       name: a?.name || '',
+      email: a?.email || '',
+      phone: a?.phone || '',
       artForm: a?.artForm || '',
       teamRole: a?.teamRole || '',
       isTeamMember: a?.isTeamMember ?? false,
@@ -128,6 +144,100 @@ const Artists = () => {
     }
   };
 
+  // ---------- Bulk upload helpers ----------
+  const parseCSVPreview = (text) => {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (lines.length === 0) return [];
+    const headers = splitCSVLine(lines[0]).map((h) => h.trim().toLowerCase());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = splitCSVLine(lines[i]);
+      if (values.every((v) => v.trim() === '')) continue;
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = (values[idx] || '').trim(); });
+      rows.push(row);
+    }
+    return rows;
+  };
+
+  const splitCSVLine = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') { current += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current); current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current);
+    return result;
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFile = (file) => {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error('Please upload a .csv file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const preview = parseCSVPreview(text);
+      setBulkFile({ file, text });
+      setBulkPreview(preview);
+      setBulkShowPreview(true);
+      setBulkResults(null);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFile || !bulkFile.text) return;
+    setBulkProcessing(true);
+    setBulkResults(null);
+    try {
+      const res = await adminAPI.bulkUploadArtists(bulkFile.text, true);
+      setBulkResults(res);
+      toast.success(`Processed ${res.summary.total} artists. Created: ${res.summary.created}, Updated: ${res.summary.updated}`);
+      fetchArtists();
+    } catch (err) {
+      console.error('Bulk upload error:', err);
+      toast.error(err?.response?.data?.error || 'Bulk upload failed');
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const resetBulk = () => {
+    setBulkFile(null);
+    setBulkPreview([]);
+    setBulkResults(null);
+    setBulkShowPreview(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -147,6 +257,176 @@ const Artists = () => {
           <Plus size={20} className="mr-2" />
           Add Artist
         </button>
+      </div>
+
+      {/* Bulk Upload */}
+      <div className="card overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+              <UploadCloud size={20} className="text-red-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Bulk Upload Artists</h2>
+              <p className="text-sm text-gray-500">Drop a CSV file to create or update many artists at once. Invite emails are sent automatically.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {!bulkFile ? (
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors ${
+                dragActive
+                  ? 'border-red-500 bg-red-50'
+                  : 'border-gray-200 hover:border-red-400 hover:bg-gray-50'
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
+              <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <FileSpreadsheet size={28} className="text-gray-400" />
+              </div>
+              <p className="text-sm font-medium text-gray-700 mb-1">
+                Click to upload or drag and drop a CSV file
+              </p>
+              <p className="text-xs text-gray-400">
+                Expected columns: ID, name, instagram, artform, Mob#, Email, Location
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileSpreadsheet size={20} className="text-red-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{bulkFile.file.name}</p>
+                    <p className="text-xs text-gray-500">{bulkPreview.length} rows parsed</p>
+                  </div>
+                </div>
+                <button
+                  onClick={resetBulk}
+                  className="text-sm text-gray-500 hover:text-red-600 font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <button
+                onClick={() => setBulkShowPreview((s) => !s)}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"
+              >
+                {bulkShowPreview ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {bulkShowPreview ? 'Hide preview' : 'Show preview'}
+              </button>
+
+              {bulkShowPreview && (
+                <div className="border border-gray-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        {Object.keys(bulkPreview[0] || {}).map((h) => (
+                          <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {bulkPreview.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          {Object.values(row).map((v, i) => (
+                            <td key={i} className="px-4 py-2 text-gray-700 truncate max-w-[180px]">{v}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={handleBulkUpload}
+                  disabled={bulkProcessing}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  {bulkProcessing ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <UploadCloud size={18} />
+                  )}
+                  {bulkProcessing ? 'Processing…' : 'Upload & Send Invites'}
+                </button>
+                <button
+                  onClick={resetBulk}
+                  disabled={bulkProcessing}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Results */}
+          {bulkResults && (
+            <div className="mt-6 space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-900">{bulkResults.summary.total}</div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">Total</div>
+                </div>
+                <div className="bg-green-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-green-700">{bulkResults.summary.created}</div>
+                  <div className="text-xs text-green-600 uppercase tracking-wide mt-1">Created</div>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-700">{bulkResults.summary.updated}</div>
+                  <div className="text-xs text-blue-600 uppercase tracking-wide mt-1">Updated</div>
+                </div>
+                <div className="bg-red-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-red-700">{bulkResults.summary.failed}</div>
+                  <div className="text-xs text-red-600 uppercase tracking-wide mt-1">Failed</div>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-700">{bulkResults.summary.emailsSent}</div>
+                  <div className="text-xs text-purple-600 uppercase tracking-wide mt-1">Emails Sent</div>
+                </div>
+                <div className="bg-orange-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-orange-700">{bulkResults.summary.emailsFailed}</div>
+                  <div className="text-xs text-orange-600 uppercase tracking-wide mt-1">Email Failures</div>
+                </div>
+              </div>
+
+              {bulkResults.results.failed.length > 0 && (
+                <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-red-700 font-semibold text-sm mb-2">
+                    <AlertCircle size={16} />
+                    Failed rows
+                  </div>
+                  <ul className="text-xs text-red-600 space-y-1 max-h-40 overflow-y-auto">
+                    {bulkResults.results.failed.map((f, i) => (
+                      <li key={i}>
+                        <span className="font-medium">{f.row.name || 'Unknown'}:</span> {f.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="card p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
@@ -211,6 +491,14 @@ const Artists = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Art form</label>
                   <input className="input" value={form.artForm} onChange={(e) => setForm((f) => ({ ...f, artForm: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" className="input" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="artist@example.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input type="tel" className="input" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Team role</label>
