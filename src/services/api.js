@@ -1,8 +1,6 @@
 import axios from 'axios';
 
 // API Configuration
-const DEFAULT_PROD_API_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_DEFAULT_PROD_API_URL || '';
-
 const normalizeApiBaseUrl = (url) => {
   if (!url) return url;
   const trimmed = String(url).trim().replace(/\/+$/, '');
