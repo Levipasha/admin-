@@ -62,11 +62,12 @@ const EventSubscribers = () => {
   };
 
   const exportCSV = () => {
-    const headers = ['Email', 'Name', 'City', 'Status', 'Subscribed Date'];
+    const headers = ['Email', 'Name', 'City', 'Source', 'Status', 'Subscribed Date'];
     const rows = subscribers.map(s => [
       s.email,
       s.name || '',
       s.city || '',
+      s.source || 'Events',
       s.isActive ? 'Active' : 'Inactive',
       new Date(s.createdAt).toLocaleDateString()
     ]);
@@ -93,7 +94,7 @@ const EventSubscribers = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Users className="w-6 h-6" /> Event Subscribers
+          <Users className="w-6 h-6" /> Banner Subscribers
         </h1>
         <button 
           onClick={exportCSV}
@@ -146,7 +147,7 @@ const EventSubscribers = () => {
         <div className="text-center py-16 text-gray-400">
           <Mail size={48} className="mx-auto mb-4" />
           <p className="text-lg">No subscribers yet</p>
-          <p className="text-sm">Subscribers will appear here when users subscribe on the events page</p>
+          <p className="text-sm">Subscribers will appear here when users subscribe on the Marketplace banner or events page</p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -157,6 +158,7 @@ const EventSubscribers = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">City</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subscribed</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -173,6 +175,15 @@ const EventSubscribers = () => {
                     </td>
                     <td className="px-6 py-4 text-gray-700">{sub.name || '—'}</td>
                     <td className="px-6 py-4 text-gray-700">{sub.city || '—'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        sub.source === 'marketplace_waitlist' 
+                          ? 'bg-red-100 text-red-700 border border-red-200' 
+                          : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      }`}>
+                        {sub.source === 'marketplace_waitlist' ? 'Marketplace' : sub.source || 'Events'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${sub.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                         {sub.isActive ? 'Active' : 'Inactive'}

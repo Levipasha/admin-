@@ -11,21 +11,14 @@ const normalizeApiBaseUrl = (url) => {
 
 const resolveApiBaseUrl = () => {
   const envBaseUrl = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
-  const isBrowser = typeof window !== 'undefined';
-  const host = isBrowser ? window.location.hostname : '';
-  const isLocalHost = host === 'localhost' || host === '127.0.0.1';
 
-  // When running locally, always use local dev API
-  if (isBrowser && isLocalHost) {
-    return `${process.env.REACT_APP_DEV_API_URL || 'http://localhost:5000'}/api`;
-  }
-
-  // Production: use env URL or default prod URL
-  if (envBaseUrl) {
+  // If a production API URL is explicitly provided in env, use it everywhere
+  if (envBaseUrl && !envBaseUrl.includes('localhost') && !envBaseUrl.includes('127.0.0.1')) {
     return envBaseUrl;
   }
 
-  return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
+  // Fallback to new AWS endpoint
+  return normalizeApiBaseUrl('https://sverx.nanoprofiles.com/api');
 };
 
 const API_BASE_URL = resolveApiBaseUrl();

@@ -26,7 +26,7 @@ const Layout = () => {
     { path: '/gallery', icon: ImageIcon, label: 'Gallery' },
     { path: '/announcements', icon: Megaphone, label: 'Announcements' },
     { path: '/forms', icon: FileText, label: 'Forms' },
-    { path: '/subscribers', icon: Mail, label: 'Subscribers' },
+    { path: '/subscribers', icon: Mail, label: 'Banner Subscribers' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
