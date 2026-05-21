@@ -76,6 +76,7 @@ const Events = () => {
       category: event?.category || 'meetup',
       status: event?.status || 'published',
       startDate: event?.date?.start ? new Date(event.date.start).toISOString().slice(0, 16) : '',
+      endDate: event?.date?.end ? new Date(event.date.end).toISOString().slice(0, 16) : '',
       locationType: event?.location?.type || 'physical',
       eventLink: event?.location?.virtualLink || '',
       platform: event?.location?.platform || '',
@@ -99,6 +100,7 @@ const Events = () => {
       category: 'meetup',
       status: 'published',
       startDate: new Date().toISOString().slice(0, 16),
+      endDate: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
       locationType: 'physical',
       eventLink: '',
       platform: '',
@@ -130,7 +132,7 @@ const Events = () => {
         status: editForm.status,
         date: {
           start: editForm.startDate ? new Date(editForm.startDate).toISOString() : editingEvent?.date?.start,
-          end: editingEvent?.date?.end || (editForm.startDate ? new Date(editForm.startDate).toISOString() : editingEvent?.date?.start)
+          end: editForm.endDate ? new Date(editForm.endDate).toISOString() : editingEvent?.date?.end || (editForm.startDate ? new Date(editForm.startDate).toISOString() : editingEvent?.date?.start)
         },
         location: {
           ...(editingEvent?.location || {}),
@@ -491,6 +493,10 @@ const Events = () => {
                   <input type="datetime-local" className="input" value={editForm.startDate} onChange={(e) => setEditForm((f) => ({ ...f, startDate: e.target.value }))} />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End date</label>
+                  <input type="datetime-local" className="input" value={editForm.endDate || ''} onChange={(e) => setEditForm((f) => ({ ...f, endDate: e.target.value }))} />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Location type</label>
                   <select
                     className="input"
@@ -552,15 +558,7 @@ const Events = () => {
                     onChange={(e) => setEditForm((f) => ({ ...f, eventLink: e.target.value }))}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
-                  <input
-                    className="input"
-                    placeholder="Zoom / Meet / Teams"
-                    value={editForm.platform}
-                    onChange={(e) => setEditForm((f) => ({ ...f, platform: e.target.value }))}
-                  />
-                </div>
+                {/* Platform input removed */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Venue / Address</label>
                   <input className="input" value={editForm.venue} onChange={(e) => setEditForm((f) => ({ ...f, venue: e.target.value }))} />

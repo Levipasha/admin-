@@ -44,6 +44,12 @@ const Announcements = () => {
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkResult, setBulkResult] = useState(null);
 
+  // Broadcast DM state
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastText, setBroadcastText] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
+
   const token = localStorage.getItem('adminToken');
 
   useEffect(() => {
@@ -297,6 +303,34 @@ const Announcements = () => {
       toast.error(error.response?.data?.error || 'Failed to send bulk announcement');
     } finally {
       setBulkSending(false);
+    }
+  };
+
+  const handleSendBroadcastDM = async (e) => {
+    e.preventDefault();
+    if (!broadcastText.trim()) {
+      toast.error('Broadcast message text is required');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to broadcast this DM to ALL active artists?')) {
+      return;
+    }
+    setBroadcastSending(true);
+    setBroadcastResult(null);
+    try {
+      const data = await adminAPI.broadcastMessageToArtists(broadcastText.trim());
+      if (data.success) {
+        toast.success(`Broadcast DM successfully sent to ${data.sentCount} artists!`);
+        setBroadcastResult(data);
+        setBroadcastText('');
+      } else {
+        toast.error(data.error || 'Failed to send broadcast DM');
+      }
+    } catch (error) {
+      console.error('Broadcast DM error:', error);
+      toast.error(error.response?.data?.error || 'Failed to send broadcast DM');
+    } finally {
+      setBroadcastSending(false);
     }
   };
 
@@ -564,6 +598,81 @@ const Announcements = () => {
               <button
                 type="button"
                 onClick={() => { setBulkEmailOpen(false); setBulkResult(null); }}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Broadcast DM Section */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              Broadcast DM to All Artists
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+                ArtArtist (Verified)
+              </span>
+            </h2>
+            <p className="text-sm text-gray-500">Send an instant direct message (DM) to all active artists. The message will appear under the verified name "ArtArtist" with a blue checkmark badge.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBroadcastOpen(!broadcastOpen)}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Megaphone size={20} />
+            {broadcastOpen ? 'Close' : 'Create Broadcast DM'}
+          </button>
+        </div>
+
+        {broadcastOpen && (
+          <form onSubmit={handleSendBroadcastDM} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Direct Message Content</label>
+              <textarea
+                value={broadcastText}
+                onChange={(e) => setBroadcastText(e.target.value)}
+                rows={4}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your system DM message to all artists..."
+                required
+              />
+            </div>
+
+            {broadcastResult && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800 font-semibold font-bold">Broadcast Successfully Delivered!</p>
+                <p className="text-sm text-blue-700 mt-1">
+                  Sent DM broadcast to <strong>{broadcastResult.sentCount}</strong> active artists.
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={broadcastSending}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {broadcastSending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Broadcasting...
+                  </>
+                ) : (
+                  <>
+                    <Megaphone size={18} />
+                    Send Broadcast DM
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setBroadcastOpen(false); setBroadcastResult(null); }}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancel

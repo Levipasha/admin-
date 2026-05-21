@@ -232,6 +232,10 @@ export const adminAPI = {
     const response = await api.post('/admin/announcements/bulk-email', payload);
     return response.data;
   },
+  broadcastMessageToArtists: async (text) => {
+    const response = await api.post('/admin/artists/broadcast-message', { text });
+    return response.data;
+  },
   uploadHeroLogo: async (file) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -286,6 +290,51 @@ export const adminAPI = {
   },
   deleteSubscriber: async (id) => {
     const response = await api.delete(`/forms/admin/subscribers/${id}`);
+    return response.data;
+  },
+};
+
+// ArtDistrict API (admin)
+export const artDistrictAPI = {
+  // Config (prices + payment link)
+  getConfig: async () => {
+    const response = await api.get('/admin/art-district/config');
+    return response.data;
+  },
+  updateConfig: async (payload) => {
+    const response = await api.put('/admin/art-district/config', payload);
+    return response.data;
+  },
+
+  // Gallery management
+  getGallery: async () => {
+    const response = await api.get('/admin/art-district/gallery');
+    return response.data;
+  },
+  updateGallery: async (galleryImages) => {
+    const response = await api.put('/admin/art-district/gallery', { galleryImages });
+    return response.data;
+  },
+  uploadGalleryImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await api.post('/admin/art-district/gallery/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // Registrations
+  getRegistrations: async (params = {}) => {
+    const response = await api.get('/admin/art-district/registrations', { params });
+    return response.data;
+  },
+  createRegistration: async (payload) => {
+    const response = await api.post('/admin/art-district/registrations', payload);
+    return response.data;
+  },
+  deleteRegistration: async (id) => {
+    const response = await api.delete(`/admin/art-district/registrations/${id}`);
     return response.data;
   },
 };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../services/api';
-import { Plus, Trash2, Edit, FileText, Users, ChevronUp, X, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Trash2, Edit, FileText, Users, ChevronUp, X, Eye, CheckCircle, XCircle, Copy, Link2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FIELD_TYPES = [
@@ -29,6 +29,7 @@ const Forms = () => {
   const [events, setEvents] = useState([]);
   const [editing, setEditing] = useState(null); // null = list, {} = create, {_id} = edit
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
   const [form, setForm] = useState({
     eventId: '',
     title: '',
@@ -124,8 +125,8 @@ const Forms = () => {
   };
 
   const save = async () => {
-    if (!form.eventId || !form.title || !form.fields.length || !form.fields.some(f => f.label)) {
-      toast.error('Event, title and at least one field with label are required');
+    if (!form.title || !form.fields.length || !form.fields.some(f => f.label)) {
+      toast.error('Title and at least one field with a label are required');
       return;
     }
     try {
@@ -223,17 +224,26 @@ const Forms = () => {
           <div className="text-center py-16 text-gray-400">
             <FileText size={48} className="mx-auto mb-4" />
             <p className="text-lg">No forms created yet</p>
-            <p className="text-sm">Create a registration form for an event</p>
+            <p className="text-sm">Create a standalone form or link one to an event</p>
           </div>
         ) : (
           <div className="grid gap-4">
-            {forms.map(f => (
+            {forms.map(f => {
+              const publicUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port.replace('3001','3000') : ''}/forms/${f._id}`;
+              const handleCopy = () => {
+                navigator.clipboard.writeText(publicUrl).then(() => {
+                  setCopiedId(f._id);
+                  toast.success('Form URL copied!');
+                  setTimeout(() => setCopiedId(null), 2000);
+                });
+              };
+              return (
               <div key={f._id} className="bg-white rounded-lg shadow p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900">{f.title}</h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      Event: {f.eventId?.title || 'Unknown'} &middot; {f.fields?.length || 0} fields
+                      {f.eventId?.title ? `Event: ${f.eventId.title} · ` : 'Standalone form · '}{f.fields?.length || 0} fields
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${f.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
@@ -243,8 +253,33 @@ const Forms = () => {
                         <span className="text-xs text-gray-500">Max: {f.maxSubmissions}</span>
                       )}
                     </div>
+                    {/* Shareable URL */}
+                    <div className="flex items-center gap-2 mt-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                      <Link2 size={13} className="text-gray-400 flex-shrink-0" />
+                      <span className="text-xs text-gray-600 font-mono flex-1 truncate">{publicUrl}</span>
+                      <button
+                        onClick={handleCopy}
+                        className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md transition-colors cursor-pointer flex-shrink-0 ${
+                          copiedId === f._id
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-50 text-red-600 hover:bg-red-100'
+                        }`}
+                        title="Copy shareable form URL"
+                      >
+                        <Copy size={12} /> {copiedId === f._id ? 'Copied!' : 'Copy'}
+                      </button>
+                      <a
+                        href={publicUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-600 transition-colors flex-shrink-0"
+                        title="Open form in new tab"
+                      >
+                        <ExternalLink size={13} />
+                      </a>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-3">
                     <button onClick={() => openSubmissions(f)} className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100">
                       <Users size={16} /> {f.submissionCount || 0} submissions
                     </button>
@@ -257,7 +292,7 @@ const Forms = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
@@ -364,14 +399,13 @@ const Forms = () => {
             <h2 className="font-semibold text-gray-900">Form Details</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Event</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Event <span className="text-gray-400 font-normal">(optional)</span></label>
               <select
                 className="input"
                 value={form.eventId}
                 onChange={(e) => setForm(prev => ({ ...prev, eventId: e.target.value }))}
-                disabled={editing?._id && editing._id !== 'new'}
               >
-                <option value="">Select an event</option>
+                <option value="">No event — standalone form</option>
                 {events.map(ev => (
                   <option key={ev._id} value={ev._id}>{ev.title}</option>
                 ))}

@@ -7,6 +7,7 @@ import {
 import toast from 'react-hot-toast';
 
 const initialForm = {
+  artistNumber: '',
   name: '',
   email: '',
   phone: '',
@@ -83,6 +84,7 @@ const Artists = () => {
   const openEdit = (a) => {
     setEditing(a);
     setForm({
+      artistNumber: a?.artistNumber || '',
       name: a?.name || '',
       email: a?.email || '',
       phone: a?.phone || '',
@@ -456,7 +458,14 @@ const Artists = () => {
               )}
             </div>
             <div className="p-4 space-y-2">
-              <div className="font-semibold text-gray-900">{a.name}</div>
+               <div className="font-semibold text-gray-900 flex items-center justify-between gap-2">
+                <span>{a.name}</span>
+                {a.artistNumber && (
+                  <span className="text-[10px] font-bold text-red-600">
+                    ID: #{a.artistNumber}
+                  </span>
+                )}
+              </div>
               <div className="text-sm text-gray-600">{a.teamRole || a.artForm}</div>
               <div className="text-xs text-gray-500">{[a.location?.city, a.location?.state, a.location?.country].filter(Boolean).join(', ')}</div>
               <div className="flex gap-2">
@@ -484,6 +493,10 @@ const Artists = () => {
               </div>
 
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Artist Number / ID</label>
+                  <input className="input" value={form.artistNumber} onChange={(e) => setForm((f) => ({ ...f, artistNumber: e.target.value }))} placeholder="e.g. 101" />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   <input className="input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />

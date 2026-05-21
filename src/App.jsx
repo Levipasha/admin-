@@ -14,6 +14,7 @@ import Forms from './components/Forms';
 import EventSubscribers from './components/EventSubscribers';
 import Layout from './components/Layout';
 import Login from './components/Login';
+import ArtDistrict from './components/ArtDistrict';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -64,6 +65,7 @@ function App() {
           <Route path="announcements" element={<Announcements />} />
           <Route path="forms" element={<Forms />} />
           <Route path="subscribers" element={<EventSubscribers />} />
+          <Route path="art-district" element={<ArtDistrict />} />
           <Route path="settings" element={<SystemSettings />} />
         </Route>
       </Routes>
