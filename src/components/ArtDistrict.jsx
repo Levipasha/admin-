@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, Trash2, MapPin, Palette, Mail, Instagram, Link2, Upload, Image, X, Save, RefreshCw, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { artDistrictAPI } from '../services/api';
@@ -36,12 +36,6 @@ const ArtDistrict = () => {
   });
   const [submittingMember, setSubmittingMember] = useState(false);
 
-  // ─── Load on mount ─────────────────────────────────────────
-  useEffect(() => {
-    fetchConfig();
-    fetchRegistrations();
-  }, []);
-
   const fetchConfig = async () => {
     setLoading(true);
     try {
@@ -60,7 +54,7 @@ const ArtDistrict = () => {
     }
   };
 
-  const fetchRegistrations = async () => {
+  const fetchRegistrations = useCallback(async () => {
     setLoadingRegs(true);
     try {
       const params = {};
@@ -75,12 +69,15 @@ const ArtDistrict = () => {
     } finally {
       setLoadingRegs(false);
     }
-  };
+  }, [artSearchTerm, artFilterCategory, artFilterPass]);
 
-  // Re-fetch when filters change
+  useEffect(() => {
+    fetchConfig();
+  }, []);
+
   useEffect(() => {
     fetchRegistrations();
-  }, [artSearchTerm, artFilterCategory, artFilterPass]);
+  }, [fetchRegistrations]);
 
   // ─── Save config (prices + payment link) ───────────────────
   const handleSaveConfig = async (e) => {
