@@ -23,4 +23,18 @@ const resolveApiBaseUrl = () => {
 };
 
 export const API_URL = resolveApiBaseUrl();
+
+/** Main marketplace site where public FormPage is hosted (not the admin app). */
+const resolvePublicSiteUrl = () => {
+  const envUrl = process.env.REACT_APP_PUBLIC_SITE_URL?.trim();
+  if (envUrl) return envUrl.replace(/\/+$/, '');
+  if (process.env.NODE_ENV === 'development') return 'http://localhost:3000';
+  return 'https://www.artartist.in';
+};
+
+export const PUBLIC_SITE_URL = resolvePublicSiteUrl();
+
+export const getPublicFormUrl = (formId) =>
+  `${PUBLIC_SITE_URL}/forms/${formId}`;
+
 export default API_URL;

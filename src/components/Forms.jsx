@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../services/api';
+import { getPublicFormUrl } from '../config';
 import { Plus, Trash2, Edit, FileText, Users, ChevronUp, X, Eye, CheckCircle, XCircle, Copy, Link2, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -229,7 +230,7 @@ const Forms = () => {
         ) : (
           <div className="grid gap-4">
             {forms.map(f => {
-              const publicUrl = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port.replace('3001','3000') : ''}/forms/${f._id}`;
+              const publicUrl = getPublicFormUrl(f._id);
               const handleCopy = () => {
                 navigator.clipboard.writeText(publicUrl).then(() => {
                   setCopiedId(f._id);

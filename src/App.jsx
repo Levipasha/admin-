@@ -15,6 +15,7 @@ import EventSubscribers from './components/EventSubscribers';
 import Layout from './components/Layout';
 import Login from './components/Login';
 import ArtDistrict from './components/ArtDistrict';
+import FormPublicRedirect from './components/FormPublicRedirect';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -46,6 +47,9 @@ function App() {
           path="/login" 
           element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} 
         />
+
+        {/* Public form links must open on the marketplace site, not admin */}
+        <Route path="/forms/:formId" element={<FormPublicRedirect />} />
         
         {/* Protected admin routes */}
         <Route 
