@@ -352,14 +352,7 @@ const Events = () => {
                     </div>
                   </div>
 
-                  {/* Capacity */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users size={16} />
-                    <div>
-                      <div>{event.capacity.current} / {event.capacity.max}</div>
-                      <div className="text-xs">Attendees</div>
-                    </div>
-                  </div>
+
 
                   {/* Pricing */}
                   <div className="flex items-center gap-2 text-sm text-gray-600">
