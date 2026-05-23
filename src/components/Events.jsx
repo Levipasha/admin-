@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
-import { Search, Filter, Plus, Edit, Trash2, Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, Calendar, MapPin, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Events = () => {
