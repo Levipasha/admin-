@@ -10,16 +10,19 @@ const normalizeApiBaseUrl = (url) => {
 };
 
 const resolveApiBaseUrl = () => {
+  // Always prefer explicit REACT_APP_API_URL (works in both dev and prod)
+  const explicitUrl = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
+  if (explicitUrl) {
+    return explicitUrl;
+  }
+
+  // Dev fallback
   if (process.env.NODE_ENV === 'development') {
-    return `${process.env.REACT_APP_DEV_API_URL || 'https://sverx.nanoprofiles.com'}`;
+    return process.env.REACT_APP_DEV_API_URL || 'https://sverx.nanoprofiles.com/api';
   }
 
-  const envBaseUrl = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
-  if (envBaseUrl) {
-    return envBaseUrl;
-  }
-
-  return normalizeApiBaseUrl(DEFAULT_PROD_API_URL);
+  // Prod fallback
+  return normalizeApiBaseUrl(DEFAULT_PROD_API_URL) || 'https://sverx.nanoprofiles.com/api';
 };
 
 export const API_URL = resolveApiBaseUrl();

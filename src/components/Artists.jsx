@@ -2,9 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { adminAPI } from '../services/api';
 import {
   Plus, Search, Edit, Trash2, UploadCloud, FileSpreadsheet,
-  AlertCircle, Loader2, ChevronDown, ChevronUp
+  AlertCircle, Loader2, ChevronDown, ChevronUp, Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const BULK_ARTIST_CSV_TEMPLATE = `Artist ID,Email
+ART-101,artist1@example.com
+uday42,artist2@example.com
+A1001,artist3@example.com
+`;
 
 const initialForm = {
   artistNumber: '',
@@ -147,13 +153,82 @@ const Artists = () => {
   };
 
   // ---------- Bulk upload helpers ----------
+  const BULK_EMAIL_KEYS = ['email', 'e-mail', 'mail', 'mail id', 'mailid'];
+  const BULK_ID_KEYS = [
+    'artist id', 'artist_id', 'artistid', 'artist number', 'artist_number',
+    'artist no', 'artist no.', 'artist_no', 'id', 'number', 'no', 'no.'
+  ];
+
+  const extractBulkEmail = (row) => {
+    for (const key of Object.keys(row)) {
+      const k = key.trim().toLowerCase();
+      if (BULK_EMAIL_KEYS.includes(k)) return String(row[key] ?? '').trim().toLowerCase();
+    }
+    return '';
+  };
+
+  const extractBulkArtistId = (row) => {
+    for (const key of Object.keys(row)) {
+      const k = key.trim().toLowerCase();
+      if (BULK_ID_KEYS.includes(k)) {
+        const val = String(row[key] ?? '').trim();
+        if (val) return val;
+      }
+    }
+    for (const key of Object.keys(row)) {
+      const k = key.trim().toLowerCase();
+      if (!BULK_EMAIL_KEYS.includes(k) && k !== 'name') {
+        const val = String(row[key] ?? '').trim();
+        if (val) return val;
+      }
+    }
+    return '';
+  };
+
+  const placeholderNameFromEmail = (email, artistId) => {
+    const local = email.split('@')[0]?.replace(/[._+-]/g, ' ').trim();
+    if (local && local.length >= 2) {
+      return local.charAt(0).toUpperCase() + local.slice(1);
+    }
+    return artistId ? `Artist ${artistId}` : 'Artist';
+  };
+
+  const escapeCsvCell = (value) => {
+    const s = String(value ?? '');
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+
+  /** Normalize to Artist ID + Email + name (name satisfies legacy production API). */
+  const prepareBulkCsvForUpload = (csvText) => {
+    let text = csvText;
+    if (text.startsWith('\ufeff')) text = text.slice(1);
+    const rows = parseCSVPreview(text);
+    if (rows.length === 0) return text;
+
+    const lines = ['Artist ID,Email,name'];
+    for (const row of rows) {
+      const email = extractBulkEmail(row);
+      const artistId = extractBulkArtistId(row);
+      const existingName = String(row.name || row.Name || '').trim();
+      const name = existingName || placeholderNameFromEmail(email, artistId);
+      lines.push(
+        [escapeCsvCell(artistId), escapeCsvCell(email), escapeCsvCell(name)].join(',')
+      );
+    }
+    return lines.join('\n');
+  };
+
   const parseCSVPreview = (text) => {
-    const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    let normalized = text;
+    if (normalized.startsWith('\ufeff')) normalized = normalized.slice(1);
+    const lines = normalized.split(/\r?\n/).filter((l) => l.trim().length > 0);
     if (lines.length === 0) return [];
-    const headers = splitCSVLine(lines[0]).map((h) => h.trim().toLowerCase());
+    const delimiter = detectCsvDelimiter(lines[0]);
+    const headers = splitCSVLine(lines[0], delimiter).map((h) => h.trim().toLowerCase());
     const rows = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = splitCSVLine(lines[i]);
+      const values = splitCSVLine(lines[i], delimiter);
       if (values.every((v) => v.trim() === '')) continue;
       const row = {};
       headers.forEach((h, idx) => { row[h] = (values[idx] || '').trim(); });
@@ -162,7 +237,16 @@ const Artists = () => {
     return rows;
   };
 
-  const splitCSVLine = (line) => {
+  const detectCsvDelimiter = (headerLine) => {
+    const commaCount = (headerLine.match(/,/g) || []).length;
+    const semiCount = (headerLine.match(/;/g) || []).length;
+    const tabCount = (headerLine.match(/\t/g) || []).length;
+    if (semiCount > commaCount && semiCount >= tabCount) return ';';
+    if (tabCount > commaCount && tabCount > semiCount) return '\t';
+    return ',';
+  };
+
+  const splitCSVLine = (line, delimiter = ',') => {
     const result = [];
     let current = '';
     let inQuotes = false;
@@ -172,9 +256,9 @@ const Artists = () => {
       if (char === '"') {
         if (inQuotes && nextChar === '"') { current += '"'; i++; }
         else { inQuotes = !inQuotes; }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current); current = '';
-      } else {
+    } else if (char === delimiter && !inQuotes) {
+      result.push(current); current = '';
+    } else {
         current += char;
       }
     }
@@ -217,10 +301,24 @@ const Artists = () => {
 
   const handleBulkUpload = async () => {
     if (!bulkFile || !bulkFile.text) return;
+
+    const previewRows = parseCSVPreview(bulkFile.text);
+    const missingId = previewRows.filter((row) => !extractBulkArtistId(row));
+    const missingEmail = previewRows.filter((row) => !extractBulkEmail(row));
+    if (missingEmail.length > 0) {
+      toast.error('Each row needs an email address');
+      return;
+    }
+    if (missingId.length > 0) {
+      toast.error('Each row needs an Artist ID');
+      return;
+    }
+
     setBulkProcessing(true);
     setBulkResults(null);
     try {
-      const res = await adminAPI.bulkUploadArtists(bulkFile.text, true);
+      const csvToSend = prepareBulkCsvForUpload(bulkFile.text);
+      const res = await adminAPI.bulkUploadArtists(csvToSend, true);
       setBulkResults(res);
       toast.success(`Processed ${res.summary.total} artists. Created: ${res.summary.created}, Updated: ${res.summary.updated}`);
       fetchArtists();
@@ -238,6 +336,32 @@ const Artists = () => {
     setBulkResults(null);
     setBulkShowPreview(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const downloadBulkCsvTemplate = () => {
+    const blob = new Blob([BULK_ARTIST_CSV_TEMPLATE], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'artartist-bulk-artists-template.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const normalizeBulkPreviewRow = (row) => {
+    const emailKey = Object.keys(row).find((k) => {
+      const key = k.trim().toLowerCase();
+      return key === 'email' || key === 'e-mail' || key === 'mail' || key === 'mail id' || key === 'mailid';
+    });
+    const idKey = Object.keys(row).find((k) => {
+      const key = k.trim().toLowerCase();
+      if (k === emailKey) return false;
+      return key === 'artist id' || key === 'id' || key === 'artist_id' || key === 'artist number' || key.includes('artist');
+    }) || Object.keys(row).find((k) => k !== emailKey);
+    return {
+      'Artist ID': idKey ? String(row[idKey] ?? '') : '',
+      Email: emailKey ? String(row[emailKey] ?? '') : String(row.email || ''),
+    };
   };
 
   if (loading) {
@@ -268,10 +392,22 @@ const Artists = () => {
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
               <UploadCloud size={20} className="text-red-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-semibold text-gray-900">Bulk Upload Artists</h2>
-              <p className="text-sm text-gray-500">Drop a CSV file to create or update many artists at once. Invite emails are sent automatically.</p>
+              <p className="text-sm text-gray-500">
+                Upload a simple CSV with <strong>Artist ID</strong> and <strong>Email</strong> only.
+                Artist ID can be <strong>letters, numbers, or both</strong> (e.g. ART-101, uday42, A1001).
+                Invite emails are sent automatically; artists complete their profile in the dashboard.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={downloadBulkCsvTemplate}
+              className="btn-secondary inline-flex items-center gap-2 shrink-0"
+            >
+              <Download size={18} />
+              Download example CSV
+            </button>
           </div>
         </div>
 
@@ -303,7 +439,7 @@ const Artists = () => {
                 Click to upload or drag and drop a CSV file
               </p>
               <p className="text-xs text-gray-400">
-                Expected columns: ID, name, instagram, artform, Mob#, Email, Location
+                Required columns: <span className="font-medium text-gray-600">Artist ID</span> (any text) and <span className="font-medium text-gray-600">Email</span>
               </p>
             </div>
           ) : (
@@ -337,21 +473,20 @@ const Artists = () => {
                   <table className="min-w-full text-sm">
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
-                        {Object.keys(bulkPreview[0] || {}).map((h) => (
-                          <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            {h}
-                          </th>
-                        ))}
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artist ID</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {bulkPreview.map((row, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50">
-                          {Object.values(row).map((v, i) => (
-                            <td key={i} className="px-4 py-2 text-gray-700 truncate max-w-[180px]">{v}</td>
-                          ))}
-                        </tr>
-                      ))}
+                      {bulkPreview.map((row, idx) => {
+                        const normalized = normalizeBulkPreviewRow(row);
+                        return (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-gray-700">{normalized['Artist ID']}</td>
+                            <td className="px-4 py-2 text-gray-700">{normalized.Email}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -420,7 +555,7 @@ const Artists = () => {
                   <ul className="text-xs text-red-600 space-y-1 max-h-40 overflow-y-auto">
                     {bulkResults.results.failed.map((f, i) => (
                       <li key={i}>
-                        <span className="font-medium">{f.row.name || 'Unknown'}:</span> {f.reason}
+                        <span className="font-medium">{f.row.email || f.row.Email || f.row['artist id'] || f.row.id || 'Row'}:</span> {f.reason}
                       </li>
                     ))}
                   </ul>
@@ -495,7 +630,7 @@ const Artists = () => {
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Artist Number / ID</label>
-                  <input className="input" value={form.artistNumber} onChange={(e) => setForm((f) => ({ ...f, artistNumber: e.target.value }))} placeholder="e.g. 101" />
+                  <input className="input" value={form.artistNumber} onChange={(e) => setForm((f) => ({ ...f, artistNumber: e.target.value }))} placeholder="e.g. ART-101 or uday42" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
