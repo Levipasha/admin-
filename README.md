@@ -42,7 +42,7 @@ Create a `.env` file in the admin directory:
 
 ```env
 # API Configuration
-REACT_APP_API_URL=http://localhost:5000/api
+REACT_APP_API_URL=https://sverx.nanoprofiles.com/api
 REACT_APP_NAME=ArtArtist Admin
 REACT_APP_VERSION=1.0.0
 
@@ -123,7 +123,7 @@ The admin app uses Firebase authentication with role-based access control:
 
 The admin app connects to the backend API:
 
-- **Base URL**: `http://localhost:5000/api`
+- **Base URL**: `https://sverx.nanoprofiles.com/api`
 - **Authentication**: Bearer token in headers
 - **Error Handling**: Automatic token refresh
 - **Rate Limiting**: Respects backend limits

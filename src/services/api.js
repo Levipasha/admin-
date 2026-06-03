@@ -10,12 +10,12 @@ const normalizeApiBaseUrl = (url) => {
 const resolveApiBaseUrl = () => {
   const envBaseUrl = normalizeApiBaseUrl(process.env.REACT_APP_API_URL);
 
-  // If a production API URL is explicitly provided in env, use it everywhere
-  if (envBaseUrl && !envBaseUrl.includes('localhost') && !envBaseUrl.includes('127.0.0.1')) {
+  // If an API URL is explicitly provided in env, use it everywhere
+  if (envBaseUrl) {
     return envBaseUrl;
   }
 
-  // Fallback to new AWS endpoint
+  // Fallback to localhost
   return normalizeApiBaseUrl('https://sverx.nanoprofiles.com/api');
 };
 
