@@ -25,8 +25,16 @@ const ArtDistrict = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loadingRegs, setLoadingRegs] = useState(false);
   const [artSearchTerm, setArtSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [artFilterCategory, setArtFilterCategory] = useState('');
   const [artFilterPass, setArtFilterPass] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setArtSearchTerm(searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Manual member modal
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -747,8 +755,8 @@ const ArtDistrict = () => {
               <input
                 type="text"
                 placeholder="Search by Name, Email or Member ID…"
-                value={artSearchTerm}
-                onChange={e => setArtSearchTerm(e.target.value)}
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-xs bg-gray-50/50"
               />
             </div>

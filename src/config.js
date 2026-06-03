@@ -1,5 +1,5 @@
 // API Configuration
-const DEFAULT_PROD_API_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_DEFAULT_PROD_API_URL || '';
+const DEFAULT_PROD_API_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_DEFAULT_PROD_API_URL || 'https://sverx.nanoprofiles.com/api';
 
 const normalizeApiBaseUrl = (url) => {
   if (!url) return url;

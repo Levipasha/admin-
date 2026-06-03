@@ -8,6 +8,15 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const [roleFilter, setRoleFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -94,8 +103,8 @@ const UserManagement = () => {
             <input
               type="text"
               placeholder="Search users by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="input pl-10"
             />
           </div>
