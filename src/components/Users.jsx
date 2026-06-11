@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
-import { Search, Filter, Plus, Edit, Trash2, User, Mail, Paintbrush } from 'lucide-react';
+import { Search, Filter, Plus, Trash2, User, Mail, Paintbrush } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const UserManagement = () => {
