@@ -15,7 +15,7 @@ const resolveApiBaseUrl = () => {
     return envBaseUrl;
   }
 
-  // Fallback to localhost
+  // Fallback to production server
   return normalizeApiBaseUrl('https://sverx.nanoprofiles.com/api');
 };
 
@@ -91,6 +91,11 @@ export const adminAPI = {
 
   deleteUser: async (id) => {
     const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  promoteUser: async (id, data) => {
+    const response = await api.post(`/admin/users/${id}/promote`, data);
     return response.data;
   },
 

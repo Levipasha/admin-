@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
-import { Search, Filter, Plus, Edit, Trash2, User, Mail } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, User, Mail, Paintbrush } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const UserManagement = () => {
@@ -53,6 +53,28 @@ const UserManagement = () => {
         console.error('Delete user error:', error);
         toast.error('Failed to delete user');
       }
+    }
+  };
+
+  const handlePromoteUser = async (userId, userName) => {
+    const artistId = window.prompt(`Enter Artist ID (e.g. AA001) for ${userName || 'this user'}:`);
+    
+    // User cancelled the prompt
+    if (artistId === null) return;
+    
+    const trimmedId = artistId.trim();
+    if (!trimmedId) {
+      toast.error('Artist ID is required to promote user');
+      return;
+    }
+
+    try {
+      await adminAPI.promoteUser(userId, { artistNumber: trimmedId });
+      toast.success(`${userName || 'User'} promoted to Artist successfully with ID ${trimmedId}!`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Promote user error:', error);
+      toast.error(error.response?.data?.error || 'Failed to promote user');
     }
   };
 
@@ -174,13 +196,21 @@ const UserManagement = () => {
                   </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-2">
-                      <button className="text-blue-600 hover:text-blue-800 transition-colors">
-                        <Edit size={16} />
-                      </button>
+                      {user.role !== 'artist' && user.role !== 'admin' && (
+                        <button 
+                          onClick={() => handlePromoteUser(user._id, user.displayName)}
+                          className="group flex items-center gap-1.5 px-2.5 py-1 bg-black hover:bg-red-600 text-white border border-red-600 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
+                          title="Promote to Artist"
+                        >
+                          <Paintbrush size={13} className="text-red-500 group-hover:text-white transition-colors" />
+                          <span>Promote</span>
+                        </button>
+                      )}
                       {user.role !== 'admin' && (
                         <button 
                           onClick={() => handleDeleteUser(user._id)}
                           className="text-red-600 hover:text-red-800 transition-colors"
+                          title="Delete User"
                         >
                           <Trash2 size={16} />
                         </button>
