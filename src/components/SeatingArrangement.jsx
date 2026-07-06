@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { adminAPI, artDistrictAPI } from '../services/api';
+import { adminAPI } from '../services/api';
 import {
   Users, Search, Printer, RefreshCw,
   LayoutGrid, Trash2, Shuffle, CheckCircle,
   Palette, Scissors, Move, Armchair, UserMinus,
   ChevronLeft, Calendar, MapPin, ArrowRight,
-  X, Instagram, Mail, CreditCard, QrCode,
-  Clock, Star, BadgeCheck, User, Layers
+  X, Instagram, Mail,
+  Star, BadgeCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
