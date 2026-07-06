@@ -97,6 +97,8 @@ const Events = () => {
       pricingType: event?.pricing?.type || 'free',
       pricingAmount: event?.pricing?.amount || 0,
       pricingCurrency: event?.pricing?.currency || 'INR',
+      paymentMethod: event?.pricing?.paymentMethod || 'gateway',
+      paymentLink: event?.pricing?.paymentLink || '',
     });
     setImageChanged(false);
   };
@@ -121,6 +123,8 @@ const Events = () => {
       pricingType: 'free',
       pricingAmount: 0,
       pricingCurrency: 'INR',
+      paymentMethod: 'gateway',
+      paymentLink: '',
     });
     setImageChanged(false);
   };
@@ -171,7 +175,9 @@ const Events = () => {
       payload.pricing = {
         type: editForm.pricingType,
         amount: editForm.pricingType === 'free' ? 0 : Number(editForm.pricingAmount || 0),
-        currency: editForm.pricingCurrency || 'INR'
+        currency: editForm.pricingCurrency || 'INR',
+        paymentMethod: editForm.pricingType === 'paid' ? editForm.paymentMethod : 'gateway',
+        paymentLink: editForm.pricingType === 'paid' && editForm.paymentMethod === 'link' ? editForm.paymentLink.trim() : ''
       };
 
       if (editingEvent._isNew) {
@@ -548,6 +554,34 @@ const Events = () => {
                         <option value="GBP">GBP (£)</option>
                       </select>
                     </div>
+                  </>
+                )}
+
+                {editForm.pricingType === 'paid' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                      <select
+                        className="input"
+                        value={editForm.paymentMethod}
+                        onChange={(e) => setEditForm((f) => ({ ...f, paymentMethod: e.target.value }))}
+                      >
+                        <option value="gateway">Direct Gateway (Cashfree)</option>
+                        <option value="link">External Payment Link</option>
+                      </select>
+                    </div>
+                    {editForm.paymentMethod === 'link' && (
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Payment Link</label>
+                        <input
+                          type="url"
+                          className="input"
+                          placeholder="https://paytm.me/... or custom booking URL"
+                          value={editForm.paymentLink}
+                          onChange={(e) => setEditForm((f) => ({ ...f, paymentLink: e.target.value }))}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
 

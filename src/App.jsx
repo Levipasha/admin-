@@ -16,6 +16,8 @@ import Layout from './components/Layout';
 import Login from './components/Login';
 import ArtDistrict from './components/ArtDistrict';
 import FormPublicRedirect from './components/FormPublicRedirect';
+import Payments from './components/Payments';
+import SeatingArrangement from './components/SeatingArrangement';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -70,6 +72,8 @@ function App() {
           <Route path="forms" element={<Forms />} />
           <Route path="subscribers" element={<EventSubscribers />} />
           <Route path="art-district" element={<ArtDistrict />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="seating" element={<SeatingArrangement />} />
           <Route path="settings" element={<SystemSettings />} />
         </Route>
       </Routes>

@@ -16,7 +16,7 @@ const resolveApiBaseUrl = () => {
   }
 
   // Fallback to production server
-  return normalizeApiBaseUrl('https://sverx.nanoprofiles.com/api');
+  return normalizeApiBaseUrl('https://sverxiioo.nanoprofiles.com/api');
 };
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -121,6 +121,11 @@ export const adminAPI = {
 
   getEvents: async (params = {}) => {
     const response = await api.get('/admin/events', { params });
+    return response.data;
+  },
+
+  getEventRegisteredParticipants: async (eventId) => {
+    const response = await api.get(`/admin/events/${eventId}/registered-participants`);
     return response.data;
   },
 
@@ -239,6 +244,14 @@ export const adminAPI = {
   },
   broadcastMessageToArtists: async (text) => {
     const response = await api.post('/admin/artists/broadcast-message', { text });
+    return response.data;
+  },
+  getPayments: async () => {
+    const response = await api.get('/payments/admin/all');
+    return response.data;
+  },
+  deletePayment: async (id) => {
+    const response = await api.delete(`/payments/admin/${id}`);
     return response.data;
   },
   uploadHeroLogo: async (file) => {

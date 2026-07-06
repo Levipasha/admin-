@@ -1,5 +1,5 @@
 // API Configuration
-const DEFAULT_PROD_API_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_DEFAULT_PROD_API_URL || 'https://sverx.nanoprofiles.com/api';
+const DEFAULT_PROD_API_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_DEFAULT_PROD_API_URL || 'https://sverxiioo.nanoprofiles.com/api';
 
 const normalizeApiBaseUrl = (url) => {
   if (!url) return url;
@@ -18,11 +18,11 @@ const resolveApiBaseUrl = () => {
 
   // Dev fallback
   if (process.env.NODE_ENV === 'development') {
-    return process.env.REACT_APP_DEV_API_URL || 'https://sverx.nanoprofiles.com/api';
+    return process.env.REACT_APP_DEV_API_URL || 'https://sverxiioo.nanoprofiles.com/api';
   }
 
   // Prod fallback
-  return normalizeApiBaseUrl(DEFAULT_PROD_API_URL) || 'https://sverx.nanoprofiles.com/api';
+  return normalizeApiBaseUrl(DEFAULT_PROD_API_URL) || 'https://sverxiioo.nanoprofiles.com/api';
 };
 
 export const API_URL = resolveApiBaseUrl();

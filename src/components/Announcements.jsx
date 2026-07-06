@@ -363,7 +363,7 @@ const Announcements = () => {
       toast.error('Broadcast message text is required');
       return;
     }
-    if (!window.confirm('Are you sure you want to broadcast this DM to ALL active artists?')) {
+    if (!window.confirm('Are you sure you want to broadcast this DM to ALL active members (artists and users)?')) {
       return;
     }
     setBroadcastSending(true);
@@ -371,7 +371,7 @@ const Announcements = () => {
     try {
       const data = await adminAPI.broadcastMessageToArtists(broadcastText.trim());
       if (data.success) {
-        toast.success(`Broadcast DM successfully sent to ${data.sentCount} artists!`);
+        toast.success(`Broadcast DM successfully sent to ${data.sentCount} members!`);
         setBroadcastResult(data);
         setBroadcastText('');
       } else {
@@ -752,12 +752,12 @@ const Announcements = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              Broadcast DM to All Artists
+              Broadcast DM to All Members (Artists & Users)
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
                 ArtArtist (Verified)
               </span>
             </h2>
-            <p className="text-sm text-gray-500">Send an instant direct message (DM) to all active artists. The message will appear under the verified name "ArtArtist" with a blue checkmark badge.</p>
+            <p className="text-sm text-gray-500">Send an instant direct message (DM) to all active members (artists and users). The message will appear under the verified name "ArtArtist" with a blue checkmark badge.</p>
           </div>
           <button
             type="button"
@@ -787,7 +787,7 @@ const Announcements = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800 font-semibold font-bold">Broadcast Successfully Delivered!</p>
                 <p className="text-sm text-blue-700 mt-1">
-                  Sent DM broadcast to <strong>{broadcastResult.sentCount}</strong> active artists.
+                  Sent DM broadcast to <strong>{broadcastResult.sentCount}</strong> active members.
                 </p>
               </div>
             )}

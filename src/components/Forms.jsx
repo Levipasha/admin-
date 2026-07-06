@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../services/api';
 import { getPublicFormUrl } from '../config';
-import { Plus, Trash2, Edit, FileText, Users, ChevronUp, X, Eye, CheckCircle, XCircle, Copy, Link2, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Edit, FileText, Users, ChevronUp, X, Eye, CheckCircle, XCircle, Copy, Link2, ExternalLink, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FIELD_TYPES = [
@@ -208,6 +208,68 @@ const Forms = () => {
     );
   };
 
+  const escapeCsvCell = (value) => {
+    const s = String(value ?? '');
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+
+  const exportSubmissionsCSV = async () => {
+    if (!viewingSubmissions) return;
+    const toastId = toast.loading('Preparing CSV export...');
+    try {
+      const data = await adminAPI.getFormSubmissions(viewingSubmissions._id, { page: 1, limit: 100000 });
+      const submissionsToExport = data.submissions || [];
+      if (submissionsToExport.length === 0) {
+        toast.error('No submissions to export', { id: toastId });
+        return;
+      }
+
+      const formFields = viewingSubmissions.fields?.map(f => f.label) || [];
+      const extraFields = [];
+      submissionsToExport.forEach(sub => {
+        sub.responses?.forEach(r => {
+          if (r.fieldLabel && !formFields.includes(r.fieldLabel) && !extraFields.includes(r.fieldLabel)) {
+            extraFields.push(r.fieldLabel);
+          }
+        });
+      });
+
+      const headers = ['Name', 'Email', 'Status', 'Submitted At', ...formFields, ...extraFields];
+      const rows = submissionsToExport.map(sub => {
+        const row = [
+          sub.guestName || 'Anonymous',
+          sub.guestEmail || 'No email',
+          sub.status,
+          new Date(sub.createdAt).toLocaleString()
+        ];
+        [...formFields, ...extraFields].forEach(label => {
+          const resp = sub.responses?.find(r => r.fieldLabel === label);
+          row.push(resp ? resp.value : '');
+        });
+        return row;
+      });
+
+      const csvContent = [
+        headers.map(escapeCsvCell).join(','),
+        ...rows.map(row => row.map(escapeCsvCell).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const sanitizedTitle = viewingSubmissions.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `submissions-${sanitizedTitle}-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV exported successfully', { id: toastId });
+    } catch (e) {
+      console.error('Export CSV error:', e);
+      toast.error('Failed to export CSV', { id: toastId });
+    }
+  };
+
   // ==================== LIST VIEW ====================
   if (!editing && !viewingSubmissions) {
     return (
@@ -314,7 +376,16 @@ const Forms = () => {
               <p className="text-sm text-gray-500">{viewingSubmissions.title} — {viewingSubmissions.eventId?.title || ''}</p>
             </div>
           </div>
-          <span className="text-sm text-gray-500">{submissionsPagination.total} total</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">{submissionsPagination.total} total</span>
+            <button
+              onClick={exportSubmissionsCSV}
+              disabled={submissionsPagination.total === 0}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm btn-secondary rounded-lg disabled:opacity-50"
+            >
+              <Download size={18} /> Export CSV
+            </button>
+          </div>
         </div>
 
         {submissionsLoading ? (
